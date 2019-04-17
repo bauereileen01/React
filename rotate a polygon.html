@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+    }
+    circle {
+      cursor: pointer;
+      stroke: #fff;
+    }
+    polygon {
+      fill: steelblue;
+    }
+    text {
+      font-family: "Helvetica Neue", sans-serif;
+      pointer-events: none;
+    }
+    text.hidden {
+      opacity: 0;
+      transition: opacity .5s;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://unpkg.com/geometric@1.0.8/build/geometric.min.js"></script>
+  <script>
+    var width = window.innerWidth, height = window.innerHeight;
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var point = [width / 2, height / 2],
+        points = [
+          [point[0] - 100, point[1] - 100],
+          [point[0] - 50, point[1] - 100],
+          [point[0] - 75, point[1] - 75],
+          [point[0] - 50, point[1] - 50],
+          [point[0] - 100, point[1] - 50]
+        ];
+        
+    var drawCount = 0;
+
+    var polygon = svg.append("polygon");
+
+    var text = svg.selectAll("text")
+        .data([point, last(points)])
+      .enter().append("text")
+        .attr("transform", d => "translate(" + d + ")")
+        .html((d, i) => i === 0 ? "<tspan>Move the</tspan><tspan x=12 dy=16>point of origin</tspan>" : "<tspan>Rotate the</tspan><tspan x=0 dy=16>polygon</tspan>")
+        .style("text-anchor", (d, i) => i === 0 ? "start" : "middle")
+        .attr("dx", (d, i) => i === 0 ? 12 : 0)
+        .attr("dy", (d, i) => i === 0 ? -2 : 24);
+
+    var dragCircle = d3.drag()
+      .on("drag", _ => {
+        point = [event.clientX, event.clientY];
+
+        draw();
+      });
+
+    var circle = svg.append("circle")
+        .attr("r", 6)
+        .call(dragCircle);
+
+    var dragHandle = d3.drag()
+      .on("drag", _ => {
+        points = geometric.polygonRotate(
+          points,
+          geometric.lineAngle([[event.clientX, event.clientY], point]) - geometric.lineAngle([last(points), point]),
+          point
+        );
+
+        draw();
+      });
+
+    var handle = svg.append("circle")
+        .attr("r", 6)
+        .call(dragHandle);
+
+    draw();
+
+    function draw(){
+      drawCount++;
+      if (drawCount == 2){
+        text.classed("hidden", 1);
+      }
+
+      polygon.attr("points", points);
+      circle.attr("transform", "translate(" + point + ")");
+      handle.attr("transform", "translate(" + last(points) + ")")
+    }
+
+    function last(arr){
+      return arr[arr.length - 1];
+    }
+  </script>
+
+</body>
